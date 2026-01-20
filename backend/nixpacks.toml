@@ -1,11 +1,11 @@
 # Puppeteer için gerekli sistem paketleri
-# Nix tarafında sadece Node kalsın
 [phases.setup]
 nixPkgs = ["nodejs_20"]
 
-# Chromium ve kütüphaneler apt ile kurulsun (libasound2 yerine libasound2t64)
+# Chromium ve kütüphaneler apt ile kurulsun
 aptPkgs = [
   "chromium",
+  "chromium-driver",
   "libnss3",
   "libatk1.0-0",
   "libatk-bridge2.0-0",
@@ -22,7 +22,10 @@ aptPkgs = [
   "libxcomposite1",
   "libxdamage1",
   "libxfixes3",
-  "libxrandr2"
+  "libxrandr2",
+  "fonts-liberation",
+  "libappindicator3-1",
+  "xdg-utils"
 ]
 
 [variables]
@@ -30,4 +33,4 @@ PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
 PUPPETEER_EXECUTABLE_PATH = "/usr/bin/chromium"
 
 [start]
-cmd = "node src/server.js"
+cmd = "node server.js"

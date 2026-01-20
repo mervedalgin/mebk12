@@ -1,29 +1,40 @@
 const path = require('path');
 
-const getPuppeteerConfig = () => ({
-    headless: 'new', // Railway için her zaman headless
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
-    slowMo: parseInt(process.env.SLOW_MO) || 50,
-    userDataDir: path.resolve(process.env.BROWSER_DATA_DIR || './browser-data'),
-    defaultViewport: {
-        width: 1366,
-        height: 768
-    },
-    args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu',
-        '--disable-software-rasterizer',
-        '--disable-extensions',
-        '--single-process',
-        '--no-zygote',
-        '--window-size=1366,768',
-        '--lang=tr-TR'
-    ],
-    ignoreDefaultArgs: ['--enable-automation']
-});
+const getPuppeteerConfig = () => {
+    // Railway/production için chromium yolu
+    const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || 
+        '/usr/bin/chromium';
+    
+    return {
+        headless: 'new', // Railway için her zaman headless
+        executablePath,
+        slowMo: parseInt(process.env.SLOW_MO) || 50,
+        userDataDir: path.resolve(process.env.BROWSER_DATA_DIR || './browser-data'),
+        defaultViewport: {
+            width: 1366,
+            height: 768
+        },
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu',
+            '--disable-software-rasterizer',
+            '--disable-extensions',
+            '--single-process',
+            '--no-zygote',
+            '--no-first-run',
+            '--disable-background-networking',
+            '--disable-default-apps',
+            '--disable-translate',
+            '--disable-sync',
+            '--window-size=1366,768',
+            '--lang=tr-TR'
+        ],
+        ignoreDefaultArgs: ['--enable-automation']
+    };
+};
 
 // User Agent listesi (rotasyon için)
 const USER_AGENTS = [
