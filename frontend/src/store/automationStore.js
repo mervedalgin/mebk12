@@ -22,6 +22,17 @@ export const useAutomationStore = create((set, get) => ({
     progress: { ...defaultProgress },
     startTime: null,
     error: null,
+    logs: [],
+
+    addLog: (message, type = 'info') => set(state => ({
+        logs: [...state.logs, {
+            message,
+            type,
+            timestamp: new Date().toISOString()
+        }]
+    })),
+
+    clearLogs: () => set({ logs: [] }),
 
     setStatus: (data) => {
         if (!data || typeof data !== 'object') return;
