@@ -1,0 +1,304 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS Variables for theming */
+:root {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-card: rgba(255, 255, 255, 0.7);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border-color: rgba(255, 255, 255, 0.3);
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --glass-bg: rgba(255, 255, 255, 0.15);
+  --glass-border: rgba(255, 255, 255, 0.25);
+}
+
+.dark {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: rgba(30, 41, 59, 0.7);
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --accent: #60a5fa;
+  --accent-hover: #3b82f6;
+  --glass-bg: rgba(30, 41, 59, 0.5);
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Glassmorphism utilities */
+@layer components {
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  .glass-card {
+    @apply glass rounded-2xl p-6;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .glass-button {
+    @apply glass rounded-xl px-4 py-2 font-medium;
+    transition: all 0.2s ease;
+  }
+
+  .glass-button:hover {
+    background: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .glass-input {
+    @apply glass rounded-xl px-4 py-3 w-full;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .glass-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+
+  .glass-input::placeholder {
+    color: var(--text-muted);
+  }
+}
+
+/* Animated background */
+.animated-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.animated-bg::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: linear-gradient(
+    45deg,
+    #667eea 0%,
+    #764ba2 25%,
+    #6B8DD6 50%,
+    #8E37D7 75%,
+    #667eea 100%
+  );
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+  opacity: 0.3;
+}
+
+.dark .animated-bg::before {
+  opacity: 0.15;
+}
+
+/* Floating orbs */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.5;
+  animation: float 6s ease-in-out infinite;
+}
+
+.orb-1 {
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  top: -10%;
+  left: -10%;
+  animation-delay: 0s;
+}
+
+.orb-2 {
+  width: 300px;
+  height: 300px;
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+  bottom: -5%;
+  right: -5%;
+  animation-delay: 2s;
+}
+
+.orb-3 {
+  width: 250px;
+  height: 250px;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-delay: 4s;
+}
+
+.dark .orb {
+  opacity: 0.3;
+}
+
+/* Status badges */
+.status-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-pending {
+  @apply bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200;
+}
+
+.status-processing {
+  @apply bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200;
+}
+
+.status-completed {
+  @apply bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200;
+}
+
+.status-failed {
+  @apply bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200;
+}
+
+.status-skipped {
+  @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200;
+}
+
+.status-retrying {
+  @apply bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200;
+}
+
+/* Log colors */
+.log-info {
+  color: var(--accent);
+}
+
+.log-success {
+  color: var(--success);
+}
+
+.log-warning {
+  color: var(--warning);
+}
+
+.log-error {
+  color: var(--error);
+}
+
+.log-debug {
+  color: var(--text-muted);
+}
+
+/* Button variants */
+.btn {
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200;
+}
+
+.btn-primary {
+  @apply bg-blue-500 hover:bg-blue-600 text-white;
+}
+
+.btn-success {
+  @apply bg-green-500 hover:bg-green-600 text-white;
+}
+
+.btn-danger {
+  @apply bg-red-500 hover:bg-red-600 text-white;
+}
+
+.btn-warning {
+  @apply bg-yellow-500 hover:bg-yellow-600 text-white;
+}
+
+.btn-ghost {
+  @apply hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300;
+}
+
+.btn:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Progress bar */
+.progress-bar {
+  @apply h-2 rounded-full overflow-hidden;
+  background: var(--bg-secondary);
+}
+
+.progress-bar-fill {
+  @apply h-full rounded-full transition-all duration-500 ease-out;
+  background: linear-gradient(90deg, var(--accent), #8B5CF6);
+}
+
+/* Drag and drop */
+.dropzone {
+  @apply glass-card border-2 border-dashed border-gray-300 dark:border-gray-600;
+  transition: all 0.2s ease;
+}
+
+.dropzone.active {
+  @apply border-blue-500 bg-blue-50/20 dark:bg-blue-900/20;
+}
+
+/* Animation utilities */
+.animate-in {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
