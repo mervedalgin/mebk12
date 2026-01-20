@@ -1,0 +1,20 @@
+# Puppeteer için gerekli sistem paketleri
+[phases.setup]
+nixPkgs = [
+  "nodejs_20",
+  "chromium",
+  "libnss3",
+  "libatk-bridge2.0",
+  "libdrm",
+  "libxkbcommon",
+  "libxcomposite",
+  "libxdamage",
+  "libxfixes",
+  "libxrandr",
+  "libgbm",
+  "libasound2"
+]
+
+[variables]
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+PUPPETEER_EXECUTABLE_PATH = "/nix/store/chromium/bin/chromium"

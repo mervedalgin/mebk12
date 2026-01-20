@@ -20,9 +20,17 @@ const sseClients = {
 // Trust proxy (rate limiter için)
 app.set('trust proxy', 1);
 
-// CORS
+// CORS - Production ve development için dinamik
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    origin: process.env.NODE_ENV === 'production' 
+        ? allowedOrigins 
+        : true, // Development'ta tüm originlere izin ver
     credentials: true
 }));
 
