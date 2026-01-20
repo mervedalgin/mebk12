@@ -40,9 +40,11 @@ function App() {
 
             console.log('SSE connecting...');
             // Doğrudan backend'e bağlan (Vite proxy SSE için sorunlu olabilir)
-            const sseUrl = import.meta.env.DEV
-                ? 'http://localhost:3001/api/automation/stream'
-                : '/api/automation/stream';
+            const API_BASE_URL = import.meta.env.DEV
+                ? 'http://localhost:3001'
+                : (import.meta.env.VITE_API_BASE_URL || '');
+
+            const sseUrl = `${API_BASE_URL}/api/automation/stream`;
             const es = new EventSource(sseUrl);
             eventSourceRef.current = es;
 

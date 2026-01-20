@@ -9,7 +9,10 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const logService = require('./services/LogService');
 
 const app = express();
+
 const PORT = process.env.PORT || 3001;
+// Railway / container ortamları için host binding
+const HOST = process.env.HOST || '0.0.0.0';
 
 // SSE client yönetimi
 const sseClients = {
@@ -27,24 +30,24 @@ const allowedOrigins = [
     process.env.FRONTEND_URL
 ].filter(Boolean);
 
-app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? allowedOrigins 
-        : true, // Development'ta tüm originlere izin ver
-    credentials: true
-}));
+app.use(
+    cors({
+        origin: process.env.NODE_ENV === 'production' ? allowedOrigins : true, // Development'ta tüm originlere izin ver
+        credentials: true
+    })
+);
 
 // Rate Limiter - gevşek ayarlar, upload ve SSE hariç
 const limiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60000,
-    max: parseInt(process.env.RATE_LIMIT_MAX) || 500,
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 60000,
+    max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 500,
     message: {
         success: false,
         error: { message: 'Çok fazla istek gönderildi. Lütfen bekleyin.' }
     },
     skip: (req) => {
         const skipPaths = ['/upload', '/stream', '/upload-json'];
-        return skipPaths.some(p => req.path.includes(p));
+        return skipPaths.some((p) => req.path.includes(p));
     }
 });
 app.use('/api', limiter);
@@ -60,23 +63,32 @@ app.use('/screenshots', express.static(path.join(__dirname, '../data/screenshots
 // SSE yardımcı fonksiyonu - veri gönder ve flush et
 const sendSSE = (res, data) => {
     try {
+        if (!res || res.writableEnded || res.destroyed) return;
         res.write(`data: ${JSON.stringify(data)}\n\n`);
-        // Node.js streams için flush
-        if (res.flush) res.flush();
+        // Node.js streams için flush (varsa)
+        if (typeof res.flush === 'function') res.flush();
     } catch (e) {
-        // Bağlantı kapalı
+        // bağlantı kapanmış olabilir; sessiz geç
     }
+};
+
+// SSE client setlerinden güvenli şekilde sil
+const safeDeleteClient = (set, res) => {
+    try {
+        set.delete(res);
+    } catch (_) { }
 };
 
 // SSE Log Stream
 app.get('/api/logs/stream', (req, res) => {
     // SSE headers
-    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no'); // Nginx için
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.flushHeaders(); // Headerları hemen gönder
+
+    // Headerları hemen gönder
+    if (typeof res.flushHeaders === 'function') res.flushHeaders();
 
     // Client'ı kaydet
     sseClients.logs.add(res);
@@ -84,8 +96,12 @@ app.get('/api/logs/stream', (req, res) => {
     // Heartbeat - bağlantıyı canlı tut
     const heartbeat = setInterval(() => {
         try {
+            if (res.writableEnded || res.destroyed) {
+                clearInterval(heartbeat);
+                return;
+            }
             res.write(':heartbeat\n\n');
-            if (res.flush) res.flush();
+            if (typeof res.flush === 'function') res.flush();
         } catch (e) {
             clearInterval(heartbeat);
         }
@@ -106,8 +122,13 @@ app.get('/api/logs/stream', (req, res) => {
     // Cleanup
     const cleanup = () => {
         clearInterval(heartbeat);
-        unsubscribe();
-        sseClients.logs.delete(res);
+        try {
+            unsubscribe();
+        } catch (_) { }
+        safeDeleteClient(sseClients.logs, res);
+        try {
+            if (!res.writableEnded) res.end();
+        } catch (_) { }
     };
 
     req.on('close', cleanup);
@@ -117,12 +138,12 @@ app.get('/api/logs/stream', (req, res) => {
 
 // SSE Automation Stream
 app.get('/api/automation/stream', (req, res) => {
-    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.flushHeaders();
+
+    if (typeof res.flushHeaders === 'function') res.flushHeaders();
 
     const automationEngine = require('./services/AutomationEngine');
 
@@ -132,8 +153,12 @@ app.get('/api/automation/stream', (req, res) => {
     // Heartbeat
     const heartbeat = setInterval(() => {
         try {
+            if (res.writableEnded || res.destroyed) {
+                clearInterval(heartbeat);
+                return;
+            }
             res.write(':heartbeat\n\n');
-            if (res.flush) res.flush();
+            if (typeof res.flush === 'function') res.flush();
         } catch (e) {
             clearInterval(heartbeat);
         }
@@ -148,13 +173,23 @@ app.get('/api/automation/stream', (req, res) => {
     sendSSE(res, currentStatus);
 
     // Debug log
-    console.log('SSE client connected, current status:', currentStatus.status, 'waiting:', currentStatus.waitingForConfirmation);
+    console.log(
+        'SSE client connected, current status:',
+        currentStatus.status,
+        'waiting:',
+        currentStatus.waitingForConfirmation
+    );
 
     // Cleanup
     const cleanup = () => {
         clearInterval(heartbeat);
-        automationEngine.off('status', sendStatus);
-        sseClients.automation.delete(res);
+        try {
+            automationEngine.off('status', sendStatus);
+        } catch (_) { }
+        safeDeleteClient(sseClients.automation, res);
+        try {
+            if (!res.writableEnded) res.end();
+        } catch (_) { }
     };
 
     req.on('close', cleanup);
@@ -164,7 +199,11 @@ app.get('/api/automation/stream', (req, res) => {
 
 // Tüm automation clientlara broadcast
 const broadcastAutomationStatus = (data) => {
-    sseClients.automation.forEach(client => {
+    sseClients.automation.forEach((client) => {
+        if (!client || client.writableEnded || client.destroyed) {
+            safeDeleteClient(sseClients.automation, client);
+            return;
+        }
         sendSSE(client, data);
     });
 };
@@ -194,14 +233,14 @@ app.use(notFoundHandler);
 // Error handler
 app.use(errorHandler);
 
-// Start server
-const server = app.listen(PORT, () => {
-    logService.info(`🚀 Server başlatıldı`, { port: PORT });
-    console.log(`\n  🖥️  MEB Otomasyon Backend`);
+// Start server (Railway için HOST ile dinle)
+const server = app.listen(PORT, HOST, () => {
+    logService.info(`Server başlatıldı`, { host: HOST, port: PORT });
+    console.log(`\n  MEB Otomasyon Backend`);
     console.log(`  ─────────────────────────`);
-    console.log(`  🌐 API: http://localhost:${PORT}/api`);
-    console.log(`  📊 Health: http://localhost:${PORT}/health`);
-    console.log(`  📝 SSE Logs: http://localhost:${PORT}/api/logs/stream`);
+    console.log(`  API: http://${HOST}:${PORT}/api`);
+    console.log(`  Health: http://${HOST}:${PORT}/health`);
+    console.log(`  SSE Logs: http://${HOST}:${PORT}/api/logs/stream`);
     console.log(`\n`);
 });
 
@@ -214,21 +253,29 @@ const gracefulShutdown = async (signal) => {
     logService.info(`${signal} alındı, kapatılıyor...`);
 
     // SSE clientları kapat
-    sseClients.automation.forEach(client => {
-        try { client.end(); } catch (e) { }
+    sseClients.automation.forEach((client) => {
+        try {
+            client.end();
+        } catch (e) { }
     });
-    sseClients.logs.forEach(client => {
-        try { client.end(); } catch (e) { }
+    sseClients.logs.forEach((client) => {
+        try {
+            client.end();
+        } catch (e) { }
     });
 
     const queueManager = require('./services/QueueManager');
-    queueManager.saveQueue();
+    try {
+        queueManager.saveQueue();
+    } catch (_) { }
 
     // Sadece gerçek kapanmada (SIGTERM/SIGINT) tarayıcıyı kapat
     // Nodemon restart sırasında tarayıcı açık kalabilir
     if (signal !== 'nodemon') {
-        const automationEngine = require('./services/AutomationEngine');
-        await automationEngine.stop();
+        try {
+            const automationEngine = require('./services/AutomationEngine');
+            await automationEngine.stop();
+        } catch (_) { }
     }
 
     server.close(() => {
