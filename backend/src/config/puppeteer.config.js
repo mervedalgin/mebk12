@@ -1,7 +1,8 @@
 const path = require('path');
 
 const getPuppeteerConfig = () => ({
-    headless: process.env.HEADLESS === 'true' ? 'new' : false,
+    headless: 'new', // Railway için her zaman headless
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
     slowMo: parseInt(process.env.SLOW_MO) || 50,
     userDataDir: path.resolve(process.env.BROWSER_DATA_DIR || './browser-data'),
     defaultViewport: {
@@ -14,6 +15,10 @@ const getPuppeteerConfig = () => ({
         '--disable-dev-shm-usage',
         '--disable-accelerated-2d-canvas',
         '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--disable-extensions',
+        '--single-process',
+        '--no-zygote',
         '--window-size=1366,768',
         '--lang=tr-TR'
     ],
