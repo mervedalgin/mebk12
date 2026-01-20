@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     libatk-bridge2.0-0 \
     libcups2 \
     libgbm1 \
-    libasound2t64 \
+    libasound2 \
     libpangocairo-1.0-0 \
     libxss1 \
     libgtk-3-0 \
@@ -23,6 +23,8 @@ RUN apt-get update && apt-get install -y \
     libxrandr2 \
     libappindicator3-1 \
     xdg-utils \
+    ca-certificates \
+    --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Environment variables
